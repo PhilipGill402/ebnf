@@ -20,12 +20,13 @@ int main() {
 
     Lexer lexer = Lexer(contents);
     Token curr_token = lexer.get_next_token();
+    std::cout << curr_token << "\n";
 
-    while (curr_token.type != TokenType::ENDOFFILE) {
-        std::cout << curr_token << "\n";
+    do {
         curr_token = lexer.get_next_token();
-    }
-    
+        std::cout << curr_token << "\n";
+    } while (curr_token.type != TokenType::ENDOFFILE);
+     
     file.close();
 
     return 0; 

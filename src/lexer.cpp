@@ -5,12 +5,13 @@ std::ostream& operator<<(std::ostream& os, const Token& t) {
     return os;
 }
 
-char Lexer::get_next_char() {
+void Lexer::get_next_char() {
     if (pos > (int)source.size()) {
-        return '\0';
+        curr_char = '\0'; 
+        return;
     } 
-
-    return source[pos++];
+    
+    curr_char = source[pos++];
 }
 
 char Lexer::peek() {
@@ -18,7 +19,7 @@ char Lexer::peek() {
         return '\0';
     } 
 
-    return source[pos];
+    return source[pos+1];
 }
 
 Lexer::Lexer(std::string file) {
@@ -29,8 +30,35 @@ Lexer::Lexer(std::string file) {
     col = 0;
 }
 
-std::string Lexer::id() {
+std::string Lexer::terminal() {
+    // assume all of this is inside quotes 
     std::stringstream ss; 
+    while (curr_char != '"') {
+        ss << curr_char;
+        get_next_char();
+    }
+    // skip last quote
+    get_next_char();
+
+    return ss.str();
+}
+
+std::string Lexer::single_quote_terminal() {
+    // assume all of this is inside single quotes
+    std::stringstream ss; 
+    while (curr_char != '\'') {
+        ss << curr_char;
+        get_next_char();
+    }
+    // skip last quote
+    get_next_char();
+
+    return ss.str();
+
+}
+
+std::string Lexer::nonterminal() {
+    std::stringstream ss;
     while (std::isalnum(curr_char)) {
         ss << curr_char;
         get_next_char();
@@ -49,16 +77,32 @@ Token Lexer::get_next_token() {
             //skip last '*' and ')'
             get_next_char();
             get_next_char();
+
+            continue;
         }
 
         if (std::isspace(curr_char)) {
             while (std::isspace(curr_char)) {
                 get_next_char();
             }
+
+            continue;
         }
         
         if (std::isalpha(curr_char)) {
-            std::string lexeme = id();
+            std::string lexeme = nonterminal();
+            Token token = { .type = TokenType::NONTERMINAL, .lexeme = lexeme };
+
+            return token;
+        } else if (curr_char == '"') {
+            get_next_char();
+            std::string lexeme = terminal(); 
+            Token token = { .type = TokenType::TERMINAL, .lexeme = lexeme };
+
+            return token;
+        } else if (curr_char == '\'') {
+            get_next_char();
+            std::string lexeme = single_quote_terminal();
             Token token = { .type = TokenType::TERMINAL, .lexeme = lexeme };
 
             return token;
@@ -69,6 +113,11 @@ Token Lexer::get_next_token() {
             return token;
         } else if (curr_char == ',') {
             Token token = { .type = TokenType::COMMA, .lexeme = "," };
+            get_next_char();
+
+            return token;
+        } else if (curr_char == ';') {
+            Token token = { .type = TokenType::SEMICOLON, .lexeme = ";" };
             get_next_char();
 
             return token;
@@ -107,8 +156,8 @@ Token Lexer::get_next_token() {
             get_next_char();
 
             return token;
-        } else if (curr_char == '"') {
-            Token token = { .type = TokenType::QUOTE, .lexeme = "\"" };
+        } else if (curr_char == '*') {
+            Token token = { .type = TokenType::ASTERISK, .lexeme = "*" };
             get_next_char();
 
             return token;
@@ -117,12 +166,18 @@ Token Lexer::get_next_token() {
             get_next_char();
 
             return token;
+        } else if (curr_char == '+') {
+            Token token = { .type = TokenType::PLUS, .lexeme = "+" };
+            get_next_char();
+
+            return token;
         } else {
             // TODO: Implement actual ERROR handling
+            std::cout << curr_char << "\n"; 
             throw std::runtime_error("Unexpected character found in source code");
         }
     } 
     
-    Token token = { .type = ENDOFFILE, .lexeme = "\0"};
+    Token token = { .type = ENDOFFILE, .lexeme = "END OF FILE"};
     return token;
 }

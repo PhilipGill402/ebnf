@@ -35,8 +35,8 @@ factor = term , S , "?"
        | term , S , "-" , S , term
        | term , S ;
 
-concatenation = ( S , factor , S , "," ? ) + ;
-alternation = ( S , concatenation , S , "|" ? ) + ;
+concatenation = ( S , factor , S , "," ) + ;
+alternation = ( S , concatenation , S , "|" ) + ;
 
 rhs = alternation ;
 lhs = identifier ;

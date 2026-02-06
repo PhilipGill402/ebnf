@@ -18,9 +18,9 @@ typedef enum {
     RBRACE,
     LPAREN,
     RPAREN,
-    QUOTE,
     ASTERISK,
     BAR,
+    PLUS,
     ENDOFFILE
 } TokenType;
 
@@ -38,9 +38,11 @@ class Lexer {
     int line;
     int col;
 
-    char get_next_char();
+    void get_next_char();
     char peek();
-    std::string id();
+    std::string terminal();
+    std::string single_quote_terminal();
+    std::string nonterminal();
 
 public:
     Lexer(std::string file);

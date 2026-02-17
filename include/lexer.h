@@ -8,6 +8,7 @@
 typedef enum {
     NONTERMINAL,
     TERMINAL,
+    INTEGER,
     EQUAL,
     COMMA,
     SEMICOLON,
@@ -23,6 +24,8 @@ typedef enum {
     PLUS,
     ENDOFFILE
 } TokenType;
+
+std::ostream& operator<<(std::ostream& os, TokenType t);
 
 typedef struct {
     TokenType type;
@@ -43,6 +46,7 @@ class Lexer {
     std::string terminal();
     std::string single_quote_terminal();
     std::string nonterminal();
+    std::string integer();
 
 public:
     Lexer(std::string file);

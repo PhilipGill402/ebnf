@@ -1,7 +1,7 @@
 #include <iostream>
 #include <fstream>
 #include "../include/lexer.h"
-
+#include "../include/parser.h"
 
 int main() {
     std::ifstream file("file.ebnf");
@@ -19,15 +19,13 @@ int main() {
     }
 
     Lexer lexer = Lexer(contents);
-    Token curr_token = lexer.get_next_token();
-    std::cout << curr_token << "\n";
-
-    do {
-        curr_token = lexer.get_next_token();
-        std::cout << curr_token << "\n";
-    } while (curr_token.type != TokenType::ENDOFFILE);
      
     file.close();
+
+    Parser parser = Parser(lexer);
+    std::cout << parser.current_token << "\n";
+
+    parser.parse();
 
     return 0; 
 }

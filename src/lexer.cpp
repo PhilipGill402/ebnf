@@ -1,5 +1,32 @@
 #include "lexer.h"
 
+inline std::string to_string(TokenType t) {
+    switch (t) {
+        case NONTERMINAL: return "NONTERMINAL";
+        case TERMINAL:    return "TERMINAL";
+        case INTEGER:     return "INTEGER";
+        case EQUAL:       return "EQUAL";
+        case COMMA:       return "COMMA";
+        case SEMICOLON:   return "SEMICOLON";
+        case PIPE:        return "PIPE";
+        case LBRACKET:    return "LBRACKET";
+        case RBRACKET:    return "RBRACKET";
+        case LBRACE:      return "LBRACE";
+        case RBRACE:      return "RBRACE";
+        case LPAREN:      return "LPAREN";
+        case RPAREN:      return "RPAREN";
+        case ASTERISK:    return "ASTERISK";
+        case BAR:         return "BAR";
+        case PLUS:        return "PLUS";
+        case ENDOFFILE:   return "ENDOFFILE";
+        default:          return "TokenType(UNKNOWN)";
+    }
+}
+
+std::ostream& operator<<(std::ostream& os, TokenType t) {
+    return os << to_string(t);
+}
+
 std::ostream& operator<<(std::ostream& os, const Token& t) {
     os << "Token{type=" << t.type << ", lexeme=\"" << t.lexeme << "\"}";
     return os;
@@ -9,8 +36,7 @@ void Lexer::get_next_char() {
     if (pos > (int)source.size()) {
         curr_char = '\0'; 
         return;
-    } 
-    
+    }
     curr_char = source[pos++];
 }
 
@@ -25,7 +51,7 @@ char Lexer::peek() {
 Lexer::Lexer(std::string file) {
     source = file;
     curr_char = source[0];
-    pos = 0; 
+    pos = 1; 
     line = 0;
     col = 0;
 }
@@ -67,6 +93,16 @@ std::string Lexer::nonterminal() {
     return ss.str();
 }
 
+std::string Lexer::integer() {
+    std::stringstream ss; 
+    while (isdigit(curr_char)) {
+        ss << curr_char;
+        get_next_char();
+    }
+
+    return ss.str();
+}
+
 Token Lexer::get_next_token() {
     while (curr_char != '\0') {
         if (curr_char == '(' && peek() == '*') {
@@ -92,6 +128,11 @@ Token Lexer::get_next_token() {
         if (std::isalpha(curr_char)) {
             std::string lexeme = nonterminal();
             Token token = { .type = TokenType::NONTERMINAL, .lexeme = lexeme };
+
+            return token;
+        } else if (isdigit(curr_char)) {
+            std::string lexeme = integer();
+            Token token = { .type = TokenType::INTEGER, .lexeme = lexeme };
 
             return token;
         } else if (curr_char == '"') {

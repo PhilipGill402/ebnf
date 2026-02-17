@@ -1,6 +1,6 @@
 # Compiler and flags
 CXX = g++
-CXXFLAGS = -Wall -Wextra -g -Iinclude
+CXXFLAGS = -Wall -Wextra -g -Iinclude -DDEBUG
 
 # Output binaries
 TARGET = ebnf

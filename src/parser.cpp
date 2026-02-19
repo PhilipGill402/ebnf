@@ -114,6 +114,8 @@ std::unique_ptr<Term> Parser::syntactic_factor() {
     
     //TODO: implement repeats
     if (current_token.type == TokenType::INTEGER) {
+        std::cerr << "Repeats are currently not implemented. Please remove them from your ebnf file and retry\n";
+        abort();
         eat(INTEGER);
         eat(ASTERISK);
     }

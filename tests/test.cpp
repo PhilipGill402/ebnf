@@ -25,7 +25,8 @@ int main() {
     Parser parser = Parser(lexer);
     std::cout << parser.current_token << "\n";
 
-    parser.parse();
+    Syntax* root = parser.parse();
 
+    delete root;
     return 0; 
 }

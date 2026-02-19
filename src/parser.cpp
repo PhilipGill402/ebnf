@@ -1,6 +1,6 @@
 #include "parser.h" 
 
-Parser::Parser(Lexer given_lexer): lexer(given_lexer) {
+Parser::Parser(Lexer given_lexer): lexer(std::move(given_lexer)) {
     current_token = lexer.get_next_token();
 }
 
@@ -17,61 +17,86 @@ void Parser::eat(TokenType expected_type) {
     current_token = lexer.get_next_token();
 }
 
-void Parser::syntax() {
+Syntax* Parser::syntax() {
     TRACE();
     
-    syntax_rule();
+    std::vector<std::unique_ptr<Rule>> rules;
+
+    rules.push_back(syntax_rule());
 
     while (current_token.type == TokenType::NONTERMINAL) {
-        syntax_rule();
+        rules.push_back(syntax_rule());
     }
+
+    return new Syntax(std::move(rules));
 }
 
-void Parser::syntax_rule() {
+std::unique_ptr<Rule> Parser::syntax_rule() {
     TRACE();
-
+    
+    std::string name = current_token.lexeme;
     eat(TokenType::NONTERMINAL);
     eat(TokenType::EQUAL);
 
-    definitions_list();
+    std::unique_ptr<Expr> expr = definitions_list();
 
     eat(TokenType::SEMICOLON);
+
+    std::unique_ptr<Rule> rule = std::make_unique<Rule>(name, std::move(expr));
+    return rule;
 }
 
-void Parser::definitions_list() {
+std::unique_ptr<Expr> Parser::definitions_list() {
     TRACE(); 
 
-    single_definition();
+    std::vector<std::unique_ptr<Sequence>> alternatives; 
+    
+    std::unique_ptr<Sequence> alternative = single_definition();
+    alternatives.push_back(std::move(alternative));
 
     while (current_token.type == TokenType::PIPE) {
         eat(TokenType::PIPE);
 
-        single_definition();
+        alternative = single_definition();
+        alternatives.push_back(std::move(alternative));
     }
+    
+    std::unique_ptr<Expr> expr = std::make_unique<Expr>(std::move(alternatives));
+    return expr;
 }
 
-void Parser::single_definition() {
+std::unique_ptr<Sequence> Parser::single_definition() {
     TRACE(); 
+    
+    std::vector<std::unique_ptr<Term>> terms;
 
-    syntactic_term();
+    std::unique_ptr<Term> term = syntactic_term();
+    terms.push_back(std::move(term));
 
     while (current_token.type == TokenType::COMMA) {
         eat(TokenType::COMMA);
 
-        syntactic_term();
+        term = syntactic_term();
+        terms.push_back(std::move(term));
     }
+
+    std::unique_ptr<Sequence> sequence = std::make_unique<Sequence>(std::move(terms));
+    return sequence;
 }
 
-void Parser::syntactic_term() {
+std::unique_ptr<Term> Parser::syntactic_term() {
     TRACE(); 
-
-    syntactic_factor();
-
+    
+    std::unique_ptr<Term> term = syntactic_factor();
+    
+    //TODO: when exceptions are implemented add this to Term AST node
     if (current_token.type == TokenType::BAR) {
         eat(TokenType::BAR);
 
         syntactic_exception();
-    }  
+    } 
+
+    return term;
 }
 
 //TODO: implement exceptions 
@@ -84,77 +109,94 @@ void Parser::syntactic_exception() {
     return;
 }
 
-void Parser::syntactic_factor() {
+std::unique_ptr<Term> Parser::syntactic_factor() {
     TRACE(); 
-
-    if (current_token.type == INTEGER) {
+    
+    //TODO: implement repeats
+    if (current_token.type == TokenType::INTEGER) {
         eat(INTEGER);
         eat(ASTERISK);
     }
 
-    syntactic_primary();
+    std::unique_ptr<Term> term = syntactic_primary();
+    return term;
 }
 
-void Parser::syntactic_primary() {
+std::unique_ptr<Term> Parser::syntactic_primary() {
     TRACE(); 
-
+    
+    std::unique_ptr<Term> term;
     if (current_token.type == TokenType::LBRACKET) {
-        optional_sequence(); 
+        term = optional_sequence(); 
     } else if (current_token.type == TokenType::LBRACE) {
-        repeated_sequence(); 
+        term = repeated_sequence(); 
     } else if (current_token.type == TokenType::LPAREN) {
-        grouped_sequence(); 
+        term = grouped_sequence(); 
     } else if (current_token.type == TokenType::NONTERMINAL) {
+        term = std::make_unique<Nonterminal>(current_token.lexeme);
         eat(NONTERMINAL);
     } else if (current_token.type == TokenType::TERMINAL) {
+        term = std::make_unique<Terminal>(current_token.lexeme); 
         eat(TERMINAL);
     } else {
-        empty_sequence();
+        term = empty_sequence();
     }
+
+    return term;
 }
 
-void Parser::optional_sequence() {
+std::unique_ptr<Optional> Parser::optional_sequence() {
     TRACE(); 
 
     eat(LBRACKET);
     
-    definitions_list();
+    std::unique_ptr<Expr> expr = definitions_list();
 
     eat(RBRACKET);
+
+    return std::make_unique<Optional>(std::move(expr));
 }
 
-void Parser::repeated_sequence() {
+std::unique_ptr<Repeated> Parser::repeated_sequence() {
     TRACE(); 
 
     eat(LBRACE);
 
-    definitions_list();
+    std::unique_ptr<Expr> expr = definitions_list();
 
     eat(RBRACE);
+
+    return std::make_unique<Repeated>(std::move(expr));
 }
 
-void Parser::grouped_sequence() {
+std::unique_ptr<Grouped> Parser::grouped_sequence() {
     TRACE(); 
 
     eat(LPAREN);
 
-    definitions_list();
+    std::unique_ptr<Expr> expr = definitions_list();
 
     eat(RPAREN);
+
+    return std::make_unique<Grouped>(std::move(expr));
 }
 
-void Parser::empty_sequence() {
+std::unique_ptr<Empty> Parser::empty_sequence() {
     TRACE();
     TokenType type = current_token.type;
 
-    if (type != TokenType::COMMA && type != PIPE && type != BAR && type != RBRACKET && type != RBRACE && type != RPAREN && type != SEMICOLON && type != ENDOFFILE) {
+    if (type != TokenType::COMMA && type != TokenType::PIPE && type != TokenType::BAR && type != TokenType::RBRACKET && type != TokenType::RBRACE && type != TokenType::RPAREN && type != TokenType::SEMICOLON && type != TokenType::ENDOFFILE) {
         std::cerr << "Unexpected token in 'syntactic_primary': " << current_token << "\n";
         abort();
     }
+
+    return std::make_unique<Empty>();
     
 }
 
-void Parser::parse() {
-    syntax();
+Syntax* Parser::parse() {
+    Syntax* root = syntax();
     eat(TokenType::ENDOFFILE);
+
+    return root;
 }

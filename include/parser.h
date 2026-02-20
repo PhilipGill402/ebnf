@@ -17,7 +17,7 @@ class Parser {
     Lexer lexer;
     
     void eat(TokenType expected_type);
-    Syntax* syntax();
+    std::unique_ptr<Syntax> syntax();
     std::unique_ptr<Rule> syntax_rule();
     std::unique_ptr<Expr> definitions_list();
     std::unique_ptr<Sequence> single_definition();
@@ -33,6 +33,6 @@ public:
     Token current_token;
     Parser(Lexer given_lexer);
 
-    Syntax* parse(); 
+    std::unique_ptr<Syntax> parse(); 
 };
 #endif // !INCLUDE_PARSER_H

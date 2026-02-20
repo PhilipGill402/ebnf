@@ -4,13 +4,29 @@
 #include <vector>
 #include <memory>
 
+enum class NodeType {
+    SYNTAX,
+    RULE,
+    EXPR,
+    SEQUENCE,
+    TERMINAL,
+    NONTERMINAL,
+    OPTIONAL,
+    REPEATED,
+    GROUPED,
+    EMPTY
+};
+
 struct Rule;
 struct Expr;
 struct Sequence;
 struct Term;
+struct Visitor;
 
 struct AST {
-    AST() = default;
+    NodeType type;
+
+    AST(NodeType given_type);
     virtual ~AST() = default;
 
     AST(const AST&) = delete;
@@ -45,7 +61,9 @@ struct Sequence : AST {
 };
 
 struct Term : AST {
+    Term(NodeType given_type);
 
+    ~Term() override = default; // optional, but fine
 };
 
 struct Terminal : Term {

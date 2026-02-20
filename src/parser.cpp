@@ -17,7 +17,7 @@ void Parser::eat(TokenType expected_type) {
     current_token = lexer.get_next_token();
 }
 
-Syntax* Parser::syntax() {
+std::unique_ptr<Syntax> Parser::syntax() {
     TRACE();
     
     std::vector<std::unique_ptr<Rule>> rules;
@@ -28,7 +28,7 @@ Syntax* Parser::syntax() {
         rules.push_back(syntax_rule());
     }
 
-    return new Syntax(std::move(rules));
+    return std::make_unique<Syntax>(std::move(rules));
 }
 
 std::unique_ptr<Rule> Parser::syntax_rule() {
@@ -194,8 +194,8 @@ std::unique_ptr<Empty> Parser::empty_sequence() {
     
 }
 
-Syntax* Parser::parse() {
-    Syntax* root = syntax();
+std::unique_ptr<Syntax> Parser::parse() {
+    std::unique_ptr<Syntax> root = syntax();
     eat(TokenType::ENDOFFILE);
 
     return root;

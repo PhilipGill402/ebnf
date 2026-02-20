@@ -2,6 +2,7 @@
 #include <fstream>
 #include "../include/lexer.h"
 #include "../include/parser.h"
+#include "../include/interpreter.h"
 
 int main() {
     std::ifstream file("file.ebnf");
@@ -25,8 +26,10 @@ int main() {
     Parser parser = Parser(lexer);
     std::cout << parser.current_token << "\n";
 
-    Syntax* root = parser.parse();
+    std::unique_ptr<Syntax> root = parser.parse();
 
-    delete root;
+    Interpreter interpreter = Interpreter(std::move(root));
+    interpreter.interpret();
+
     return 0; 
 }

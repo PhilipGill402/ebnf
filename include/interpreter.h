@@ -4,6 +4,7 @@
 #include <iostream>
 #include <memory>
 #include <fstream>
+#include <unordered_map>
 #include "ast.h"
 #include "visitor.h"
 
@@ -32,6 +33,28 @@ public:
     Interpreter(std::unique_ptr<Syntax> node);
 
     void interpret();
+};
+
+class TerminalFinder : Visitor {
+    std::unique_ptr<Syntax> root;
+    std::unordered_map<std::string, Rule*> rules;
+    std::vector<std::string> terminals;
+    bool can_append;
+
+    void visit(Syntax &node);
+    void visit(Rule &node);
+    void visit(Expr &node);
+    void visit(Sequence &node);
+    void visit(Terminal &node);
+    void visit(Nonterminal &node);
+    void visit(Optional &node);
+    void visit(Repeated &node);
+    void visit(Grouped &node);
+    void visit(Empty &node);
+
+public:
+    TerminalFinder(std::unique_ptr<Syntax> node);
+    std::vector<std::string> find_first_terminals();
 };
 
 #endif // !INCLUDE_INTERPRETER_H_

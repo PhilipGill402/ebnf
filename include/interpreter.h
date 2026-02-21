@@ -2,18 +2,20 @@
 #define INCLUDE_INTERPRETER_H_
 
 #include <iostream>
-#include <memory.h>
+#include <memory>
+#include <fstream>
 #include "ast.h"
 #include "visitor.h"
 
 #ifdef DEBUG
-    #define VISIT_TRACE() do { std::cout << "VISITING: " << " [" << node_type_name((node).type) << "]\n"; } while(0)
+    #define VISIT_TRACE() do { std::cout << "VISITING: " << "[" << node_type_name((node).type) << "]\n"; } while(0)
 #else
     #define VISIT_TRACE() do {} while (0)
 #endif
 
 class Interpreter : Visitor {
     std::unique_ptr<Syntax> root;
+    std::ofstream file;
     
     void visit(Syntax &node);
     void visit(Rule &node);

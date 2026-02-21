@@ -42,7 +42,7 @@ build:
 
 # Clean build artifacts
 clean:
-	rm -rf build $(TARGET) $(TEST_TARGET)
+	rm -rf build $(TARGET) $(TEST_TARGET) test.cpp
 
 .PHONY: all test clean
 

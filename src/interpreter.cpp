@@ -1,7 +1,14 @@
 #include "interpreter.h"
 #include "visitor.h"
 
-Interpreter::Interpreter(std::unique_ptr<Syntax> node): root(std::move(node)) {};
+Interpreter::Interpreter(std::unique_ptr<Syntax> node): root(std::move(node)) {
+    file.open("test.cpp");
+
+    if (!file.is_open()) {
+        std::cerr << "Error in creating file\n";
+        abort();
+    }
+};
 
 void Interpreter::visit(Syntax &node) {
     VISIT_TRACE();
@@ -14,7 +21,11 @@ void Interpreter::visit(Syntax &node) {
 void Interpreter::visit(Rule &node) {
     VISIT_TRACE();
     
+    file << "void " << node.name << "() {\n";
+
     node.expr->accept(*this);
+
+    file << "}\n";
 }
 
 void Interpreter::visit(Expr &node) {
@@ -57,5 +68,8 @@ void Interpreter::visit(Empty &node) {
 }
 
 void Interpreter::interpret() {
+    file << "void eat(TokenType expected_type) {\n" << "\t#ifdef DEBUG\n" << "\t\tstd::cout << \"Token: \" << current_token << \"\\n\";\n" << "\t#endif // DEBUG\n" << "\tif (expected_type != current_token.type) {\n";
+    file << "\t\tstd::cerr << \"Expected: \" << expected_type << \", Received: \" << current_token.type << \"\\n\";\n" << "\t\t abort();\n" << "\t}\n" << "\tcurrent_token = lexer.get_next_token();\n" << "}\n";
+
     root->accept(*this); 
 }

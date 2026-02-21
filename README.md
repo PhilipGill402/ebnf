@@ -28,9 +28,13 @@ Right now, the project includes the **lexer** (tokenizer). The parser / AST buil
   - comments `(* ... *)`
   - whitespace / newlines (skipped or emitted depending on design)
   - **NOTE:** special sequences inside ? ... ? are not supported
+- Parser for the EBNF
+  - Parses an EBNF file
+  - Prints parse trace if DEBUG is defined (it is by default)
+  - Creates an AST tree
+  - NOTE: exceptions and repeats are not implemented and will cause an exception to be thrown
 
 **Not yet implemented**
-- Parser for the EBNF language (building an AST)
 - Semantic validation (undefined rules, duplicates, etc.)
 - Parser generation backend
 

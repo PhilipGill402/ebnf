@@ -41,7 +41,7 @@ public:
 };
 
 class TerminalFinder : Visitor {
-    Rule &root;
+    Expr &root;
     std::unordered_map<std::string, Rule*> rules;
     std::vector<std::string> terminals;
     bool can_append;
@@ -58,7 +58,7 @@ class TerminalFinder : Visitor {
     void visit(Empty &node);
 
 public:
-    TerminalFinder(Rule &node, std::unordered_map<std::string, Rule*> &given_rules);
+    TerminalFinder(Expr &node, std::unordered_map<std::string, Rule*> &given_rules);
     std::vector<std::string> find_first_terminals();
 };
 

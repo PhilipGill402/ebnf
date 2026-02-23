@@ -1,6 +1,34 @@
 #include "interpreter.h"
 #include "visitor.h"
 
+std::string token_enum_for_terminal(const std::string& lex) {
+    // keywords
+    if (lex == "if")    return "IFOP";
+    if (lex == "then")  return "THENOP";
+    if (lex == "end")   return "ENDOP";
+    if (lex == "while") return "WHILEOP";
+    if (lex == "print") return "PRINT";
+    if (lex == "let")   return "LET";
+
+    // punctuation / operators
+    if (lex == "=") return "ASSGN";
+    if (lex == "+") return "ADDOP";
+    if (lex == "-") return "SUBOP";
+    if (lex == "*") return "MULTOP";
+    if (lex == "/") return "DIVOP";
+    if (lex == "<") return "LT";
+    if (lex == ">") return "GT";
+    if (lex == "&") return "ANDOP";
+    if (lex == "(") return "LPAREN";
+    if (lex == ")") return "RPAREN";
+
+    // token categories written as grammar terminals
+    if (lex == "id")  return "ID";
+    if (lex == "int") return "INT";
+
+    return "NOT FOUND"; 
+}
+
 Interpreter::Interpreter(std::unique_ptr<Syntax> node): root(std::move(node)) {
     file.open("test.cpp");
 
@@ -25,7 +53,7 @@ void Interpreter::visit(Rule &node) {
     file << "void " << node.name << "() {\n";
     
     std::cout << node.name << ": ";
-    TerminalFinder finder = TerminalFinder(node, rules);
+    TerminalFinder finder = TerminalFinder(*node.expr, rules);
     std::vector<std::string> terminals = finder.find_first_terminals();
     for (std::string terminal : terminals) {
         std::cout << terminal << ", ";
@@ -55,6 +83,13 @@ void Interpreter::visit(Sequence &node) {
 
 void Interpreter::visit(Terminal &node) {
     VISIT_TRACE();
+    std::string token_type = token_enum_for_terminal(node.lexeme);
+    if (token_type == "NOT FOUND") {
+        file << "match_terminal(\"" << node.lexeme << "\");\n";
+    } else {
+        file << "eat(" << token_enum_for_terminal(node.lexeme) << ");\n";
+    }
+
 }
 void Interpreter::visit(Nonterminal &node) {
     VISIT_TRACE();
@@ -62,6 +97,21 @@ void Interpreter::visit(Nonterminal &node) {
 
 void Interpreter::visit(Optional &node) {
     VISIT_TRACE();
+
+    TerminalFinder finder = TerminalFinder(*node.expr, rules);
+    std::vector<std::string> terminals = finder.find_first_terminals();
+
+    for (std::string terminal : terminals) {
+        if (terminal == terminals.front()) {
+            file << "if (current_token.lexeme == \"" << terminal << "\") {\n";
+        } else {
+            file << "else if (current_token.lexeme == \"" << terminal << "\") {\n";
+        }
+
+        file << "\n";
+    } 
+
+    std::cout << "\n";
 }
 
 void Interpreter::visit(Repeated &node) {
@@ -83,15 +133,30 @@ void Interpreter::create_rule_table() {
 }
 
 void Interpreter::interpret() {
+    //CONSUME
+    file << "void consume() {\n";
+    file << "\tcurrent_token = lexer.get_next_token();\n";
+    file << "}\n";
+
+    // EAT
     file << "void eat(TokenType expected_type) {\n";
     file << "\t#ifdef DEBUG\n";
     file << "\t\tstd::cout << \"Token: \" << current_token << \"\\n\";\n";
     file << "\t#endif // DEBUG\n";
     file << "\tif (expected_type != current_token.type) {\n";
     file << "\t\tstd::cerr << \"Expected: \" << expected_type << \", Received: \" << current_token.type << \"\\n\";\n";
-    file << "\t\t abort();\n";
+    file << "\t\tabort();\n";
     file << "\t}\n";
-    file << "\tcurrent_token = lexer.get_next_token();\n";
+    file << "\tconsume();\n";
+    file << "}\n";
+
+    //MATCH TERMINAL
+    file << "void match_terminal(std::string expected) {\n";
+    file << "\tif (current_token.type != Token::TERMINAL || current_token.lexeme != expected) {\n";
+    file << "\t\tstd::cerr << \"Expected: \" << expected << \", Received \" << current_token.lexeme << \"\\n\";\n";
+    file << "\t\tabort();\n";
+    file << "\t}\n";
+    file << "\tconsume();\n";
     file << "}\n";
 
     create_rule_table();
@@ -99,7 +164,8 @@ void Interpreter::interpret() {
     root->accept(*this);
 }
 
-TerminalFinder::TerminalFinder(Rule &node, std::unordered_map<std::string, Rule*> &given_rules): root(node), rules(given_rules) {}
+TerminalFinder::TerminalFinder(Expr &node, std::unordered_map<std::string, Rule*> &given_rules): root(node), rules(given_rules) {}
+
 
 void TerminalFinder::visit(Syntax &node) {
     std::cerr << "Given a syntax node, never should happend\n";
@@ -107,7 +173,6 @@ void TerminalFinder::visit(Syntax &node) {
 }
 
 void TerminalFinder::visit(Rule &node) {
-    rules[node.name] = &node;
     node.expr->accept(*this);
 }
 

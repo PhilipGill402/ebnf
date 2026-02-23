@@ -1,6 +1,6 @@
 # Compiler and flags
 CXX = g++
-CXXFLAGS = -Wall -Wextra -g -Iinclude -DDEBUG -std=c++14
+CXXFLAGS = -Wall -Wextra -g -Iinclude -std=c++14
 
 # Output binaries
 TARGET = ebnf
@@ -18,6 +18,9 @@ TEST_MAIN_OBJ := build/test.o
 
 # Default rule
 all: $(TARGET)
+
+debug: CXXFLAGS += -DDEBUG
+debug: all
 
 # Build main app (includes src/main.cpp)
 $(TARGET): $(APP_OBJ) $(MAIN_OBJ)

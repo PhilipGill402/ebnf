@@ -5,6 +5,8 @@
 #include <memory>
 #include <fstream>
 #include <unordered_map>
+#include <vector>
+#include <string>
 #include "ast.h"
 #include "visitor.h"
 
@@ -16,6 +18,7 @@
 
 class Interpreter : Visitor {
     std::unique_ptr<Syntax> root;
+    std::unordered_map<std::string, Rule*> rules;
     std::ofstream file;
     
     void visit(Syntax &node);
@@ -29,6 +32,8 @@ class Interpreter : Visitor {
     void visit(Grouped &node);
     void visit(Empty &node);
 
+    void create_rule_table();
+
 public:
     Interpreter(std::unique_ptr<Syntax> node);
 
@@ -36,7 +41,7 @@ public:
 };
 
 class TerminalFinder : Visitor {
-    std::unique_ptr<Syntax> root;
+    Rule &root;
     std::unordered_map<std::string, Rule*> rules;
     std::vector<std::string> terminals;
     bool can_append;
@@ -53,7 +58,7 @@ class TerminalFinder : Visitor {
     void visit(Empty &node);
 
 public:
-    TerminalFinder(std::unique_ptr<Syntax> node);
+    TerminalFinder(Rule &node, std::unordered_map<std::string, Rule*> &given_rules);
     std::vector<std::string> find_first_terminals();
 };
 

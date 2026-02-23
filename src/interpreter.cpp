@@ -16,12 +16,21 @@ void Interpreter::visit(Syntax &node) {
     for (auto &rule : node.rules) {
         rule->accept(*this);
     }
+
 }
 
 void Interpreter::visit(Rule &node) {
     VISIT_TRACE();
     
     file << "void " << node.name << "() {\n";
+    
+    std::cout << node.name << ": ";
+    TerminalFinder finder = TerminalFinder(node, rules);
+    std::vector<std::string> terminals = finder.find_first_terminals();
+    for (std::string terminal : terminals) {
+        std::cout << terminal << ", ";
+    }
+    std::cout << "\n";
 
     node.expr->accept(*this);
 
@@ -67,6 +76,12 @@ void Interpreter::visit(Empty &node) {
     VISIT_TRACE();
 }
 
+void Interpreter::create_rule_table() {
+    for (auto &rule : root->rules) {
+        rules[rule->name] = rule.get();
+    }
+}
+
 void Interpreter::interpret() {
     file << "void eat(TokenType expected_type) {\n";
     file << "\t#ifdef DEBUG\n";
@@ -79,15 +94,16 @@ void Interpreter::interpret() {
     file << "\tcurrent_token = lexer.get_next_token();\n";
     file << "}\n";
 
-    root->accept(*this); 
+    create_rule_table();
+
+    root->accept(*this);
 }
 
-TerminalFinder::TerminalFinder(std::unique_ptr<Syntax> node): root(std::move(node)) {}
+TerminalFinder::TerminalFinder(Rule &node, std::unordered_map<std::string, Rule*> &given_rules): root(node), rules(given_rules) {}
 
 void TerminalFinder::visit(Syntax &node) {
-    for (auto &rule : node.rules) {
-        rule->accept(*this);
-    }
+    std::cerr << "Given a syntax node, never should happend\n";
+    abort();
 }
 
 void TerminalFinder::visit(Rule &node) {
@@ -114,7 +130,15 @@ void TerminalFinder::visit(Terminal &node) {
 }
 
 void TerminalFinder::visit(Nonterminal &node) {
-    std::string rule = node.rule;  
+    std::string rule = node.rule;
+    auto iter = rules.find(node.rule);
+    if (iter == rules.end()) {
+        std::cerr << "No definition for rule '" << rule << "'\n";
+        abort();
+    }
+
+    Rule* target = iter->second;
+    target->accept(*this);
 }
 
 void TerminalFinder::visit(Optional &node) {
@@ -134,6 +158,8 @@ void TerminalFinder::visit(Empty &node) {
 }
 
 std::vector<std::string> TerminalFinder::find_first_terminals() {
-    
+    visit(root);
+
+    return terminals;
 }
 

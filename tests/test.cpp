@@ -31,13 +31,6 @@ int main() {
 
     Interpreter interpreter = Interpreter(std::move(root));
     interpreter.interpret();
-
-    TerminalFinder finder = TerminalFinder(std::move(root));
-    std::vector<std::string> terminals = finder.find_first_terminals();
-
-    for (std::string terminal : terminals) {
-        std::cout << terminal << "\n";
-    }
-
+    
     return 0; 
 }

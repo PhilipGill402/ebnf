@@ -32,11 +32,12 @@ Right now, the project includes the **lexer** (tokenizer). The parser / AST buil
   - Parses an EBNF file
   - Prints parse trace if DEBUG is defined (it is by default)
   - Creates an AST tree
-  - NOTE: exceptions and repeats are not implemented and will cause an exception to be thrown
+  - Generates parser code
 
 **Not yet implemented**
 - Semantic validation (undefined rules, duplicates, etc.)
-- Parser generation backend
+- Part of the code generation is not yet completed such as errors
+- Exceptions and repeats are not implemented and will cause an exception to be thrown
 
 ---
 
@@ -89,43 +90,6 @@ make test
 ```bash
 ./lexer
 ```
-
-### Example output (conceptual)
-The lexer prints a stream of tokens such as:
-- `Token{type=0, lexeme="terminator"}`
-- `Token{type=4, lexeme=";"}`
-- `Token{type=0, lexeme="grammar"}`
-- `Token{type=2, lexeme="="}`
-- `Token{type=10, lexeme="("}`
-- `Token{type=0, lexeme="S"}`
-
----
-
-## Roadmap
-
-### 1) Parse ISO/IEC 14977 into an AST
-- Build AST node types for:
-  - rule definitions
-  - alternation
-  - concatenation
-  - optional / repeat / group
-  - terminals / nonterminals
-
-### 2) Validate grammar
-- detect duplicate rule names
-- detect undefined references
-
-### 3) Desugar EBNF → BNF
-- convert `{...}` and `[...]` into new helper nonterminals
-- handle `n * primary` as a sequence or repetition rule expansion
-
-### 4) Parse input + produce parse tree
-- build AST tree for user input
-- pretty-print / visualize the tree
-
-### 4) Generate a parser
-- Generate a **Recursive descent** parser for the user
-
 ---
 
 ## References

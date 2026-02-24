@@ -19,10 +19,10 @@ void match_terminal(std::string expected) {
 	consume();
 }
 void program() {
-    while (current_token.lexeme == "let" || current_token.lexeme == "print") {
-        stmt();
-        match_terminal(";");
-    }
+while (current_token.lexeme == "let" || current_token.lexeme == "print") {
+stmt();
+match_terminal(";");
+}
 }
 void stmt() {
 if (current_token.lexeme == "let") {

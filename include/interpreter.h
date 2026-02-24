@@ -20,6 +20,7 @@ class Interpreter : Visitor {
     std::unique_ptr<Syntax> root;
     std::unordered_map<std::string, Rule*> rules;
     std::ofstream file;
+    std::ofstream parser_header;
     
     void visit(Syntax &node);
     void visit(Rule &node);
@@ -33,6 +34,7 @@ class Interpreter : Visitor {
     void visit(Empty &node);
 
     void create_rule_table();
+    void generate_parser_header();
 
 public:
     Interpreter(std::unique_ptr<Syntax> node);

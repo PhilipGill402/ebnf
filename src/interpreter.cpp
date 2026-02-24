@@ -52,14 +52,6 @@ void Interpreter::visit(Rule &node) {
     
     file << "void " << node.name << "() {\n";
     
-    std::cout << node.name << ": ";
-    TerminalFinder finder = TerminalFinder(*node.expr, rules);
-    std::vector<std::string> terminals = finder.find_first_terminals();
-    for (std::string terminal : terminals) {
-        std::cout << terminal << ", ";
-    }
-    std::cout << "\n";
-
     node.expr->accept(*this);
 
     file << "}\n";
@@ -67,10 +59,41 @@ void Interpreter::visit(Rule &node) {
 
 void Interpreter::visit(Expr &node) {
     VISIT_TRACE();
+    
+    int count = 0;
+    if (node.alternatives.size() == 1) {
+        node.alternatives[0]->accept(*this); 
+    } else {
+        for (auto &sequence : node.alternatives) {
+            TerminalFinder finder = TerminalFinder(*sequence, rules);
+            std::vector<std::string> terminals = finder.find_first_terminals();
+            
+            if (count == 0) {
+                file << "if ";
+            } else {
+                file << "else if ";
+            }
+            
+            for (std::string terminal : terminals) {
+                std::cout << terminal << ", "; 
 
-    for (auto &alternative : node.alternatives) {
-        alternative->accept(*this); 
+                if (terminal == terminals.front()) {
+                    file << "(current_token.lexeme == \"" << terminal << "\"";
+                } else {
+                    file << " || current_token.lexeme == \"" << terminal << "\"";
+                }
+            }
+
+            file << ") {\n";
+
+            sequence->accept(*this);
+
+            file << "}\n";
+            std::cout << "\n";
+            count++;
+        }
     }
+    
 }
 
 void Interpreter::visit(Sequence &node) {
@@ -93,33 +116,75 @@ void Interpreter::visit(Terminal &node) {
 }
 void Interpreter::visit(Nonterminal &node) {
     VISIT_TRACE();
+
+    file << node.rule << "();\n";
 }
 
 void Interpreter::visit(Optional &node) {
     VISIT_TRACE();
+    
+    int count = 0;
+    for (auto &sequence : node.expr->alternatives) {
+        TerminalFinder finder = TerminalFinder(*sequence, rules);
+        std::vector<std::string> terminals = finder.find_first_terminals();
 
-    TerminalFinder finder = TerminalFinder(*node.expr, rules);
-    std::vector<std::string> terminals = finder.find_first_terminals();
-
-    for (std::string terminal : terminals) {
-        if (terminal == terminals.front()) {
-            file << "if (current_token.lexeme == \"" << terminal << "\") {\n";
+        if (count == 0) {
+            file << "if (";
         } else {
-            file << "else if (current_token.lexeme == \"" << terminal << "\") {\n";
+            file << "else if (";
         }
 
-        file << "\n";
-    } 
+        for (size_t i = 0; i < terminals.size(); i++) {
+            if (i > 0) {
+                file << " || ";
+            } 
+               
+            file << "current_token.lexeme == \"" << terminals[i] << "\"";
+        }
 
-    std::cout << "\n";
+        file << ") {\n";
+        sequence->accept(*this);
+        file << "}\n";
+        count++;
+    }
+    
 }
 
 void Interpreter::visit(Repeated &node) {
     VISIT_TRACE();
+    
+    std::vector<std::string> all_terminals;
+
+    for (auto &sequence : node.expr->alternatives) {
+        TerminalFinder finder = TerminalFinder(*sequence, rules);
+        std::vector<std::string> terminals = finder.find_first_terminals();
+        
+        for (std::string terminal : terminals) {
+            if (std::find(all_terminals.begin(), all_terminals.end(), terminal) == all_terminals.end()) {
+                all_terminals.push_back(terminal);
+            }
+        } 
+    }
+    
+    file << "while (";
+    for (size_t i = 0; i < all_terminals.size(); i++) {
+        if (i > 0) {
+            file << " || ";
+        }
+        file << "current_token.lexeme == \"" << all_terminals[i] << "\"";
+    } 
+
+    file << ") {\n";
+    
+    node.expr->accept(*this);
+
+    file << "}\n";
 }
 
 void Interpreter::visit(Grouped &node) {
     VISIT_TRACE();
+
+    node.expr->accept(*this);
 }
 
 void Interpreter::visit(Empty &node) {
@@ -164,7 +229,7 @@ void Interpreter::interpret() {
     root->accept(*this);
 }
 
-TerminalFinder::TerminalFinder(Expr &node, std::unordered_map<std::string, Rule*> &given_rules): root(node), rules(given_rules) {}
+TerminalFinder::TerminalFinder(Sequence &node, std::unordered_map<std::string, Rule*> &given_rules): root(node), rules(given_rules) {}
 
 
 void TerminalFinder::visit(Syntax &node) {
@@ -184,6 +249,7 @@ void TerminalFinder::visit(Expr &node) {
 }
 
 void TerminalFinder::visit(Sequence &node) {
+    can_append = true; 
     node.terms[0]->accept(*this);
 }
 

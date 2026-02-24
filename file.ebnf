@@ -1,18 +1,11 @@
-program
-  = stmt, { ";", stmt }, [ ";" ] ;
+program = { stmt, ";" } ;
 
-stmt
-  = "let", identifier, "=", number
-  | "print", identifier ;
+stmt = "let", identifier, "=", number | "print", identifier ;
 
-identifier
-  = letter, { letter } ;
+identifier = letter, { letter } ;
 
-number
-  = digit, { digit } ;
+number = digit, { digit } ;
 
-letter
-  = "a" | "b" | "c" | "d" | "e" ;
+letter = "a" | "b" | "c" | "d" | "e" ;
 
-digit
-  = "0" | "1" | "2" | "3" | "4" ;
+digit = "0" | "1" | "2" | "3" | "4" ;

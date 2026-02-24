@@ -75,8 +75,6 @@ void Interpreter::visit(Expr &node) {
             }
             
             for (std::string terminal : terminals) {
-                std::cout << terminal << ", "; 
-
                 if (terminal == terminals.front()) {
                     file << "(current_token.lexeme == \"" << terminal << "\"";
                 } else {
@@ -89,7 +87,6 @@ void Interpreter::visit(Expr &node) {
             sequence->accept(*this);
 
             file << "}\n";
-            std::cout << "\n";
             count++;
         }
     }
@@ -147,7 +144,6 @@ void Interpreter::visit(Optional &node) {
         file << "}\n";
         count++;
     }
-    
 }
 
 void Interpreter::visit(Repeated &node) {
@@ -209,8 +205,8 @@ void Interpreter::interpret() {
     file << "\t\tstd::cout << \"Token: \" << current_token << \"\\n\";\n";
     file << "\t#endif // DEBUG\n";
     file << "\tif (expected_type != current_token.type) {\n";
-    file << "\t\tstd::cerr << \"Expected: \" << expected_type << \", Received: \" << current_token.type << \"\\n\";\n";
-    file << "\t\tabort();\n";
+    file << "\t\tstd::cout << \"Expected: \" << expected_type << \", Received: \" << current_token.type << \"\\n\";\n";
+    file << "\t\tparse_errors++;\n";
     file << "\t}\n";
     file << "\tconsume();\n";
     file << "}\n";
@@ -218,8 +214,8 @@ void Interpreter::interpret() {
     //MATCH TERMINAL
     file << "void match_terminal(std::string expected) {\n";
     file << "\tif (current_token.type != Token::TERMINAL || current_token.lexeme != expected) {\n";
-    file << "\t\tstd::cerr << \"Expected: \" << expected << \", Received \" << current_token.lexeme << \"\\n\";\n";
-    file << "\t\tabort();\n";
+    file << "\t\tstd::cout << \"Expected: \" << expected << \", Received \" << current_token.lexeme << \"\\n\";\n";
+    file << "\t\tparse_errors++;\n";
     file << "\t}\n";
     file << "\tconsume();\n";
     file << "}\n";
@@ -227,6 +223,11 @@ void Interpreter::interpret() {
     create_rule_table();
 
     root->accept(*this);
+
+    file << "void parse() {\n";
+    file << "\t" << root->rules[0]->name << "();\n";
+    file << "\tstd::cout << \"There were \" << parse_errors << \" parse errors\\n\"\n";
+    file << "}";
 }
 
 TerminalFinder::TerminalFinder(Sequence &node, std::unordered_map<std::string, Rule*> &given_rules): root(node), rules(given_rules) {}

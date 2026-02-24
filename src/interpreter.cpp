@@ -29,11 +29,45 @@ std::string token_enum_for_terminal(const std::string& lex) {
     return "NOT FOUND"; 
 }
 
+void Interpreter::generate_parser_header() {
+    parser_header << "#ifndef PARSER_H_\n";
+    parser_header << "#define PARSER_H_\n";
+    parser_header << "#include <string>\n";
+    parser_header << "#include <vector>\n";
+    parser_header << "#include \"lexer.h\"\n";
+    parser_header << "#ifdef DEBUG\n";
+    parser_header << "\t#define TRACE() do { std::cout << \"ENTERING: \" << __func__ << \"\\n\"; } while(0)\n";
+    parser_header << "#else\n";
+    parser_header << "\t#define TRACE() do {} while (0)\n";
+    parser_header << "#endif\n";
+    parser_header << "\n";
+    parser_header << "class Parser {\n";
+    parser_header << "\tLexer lexer;\n";
+    parser_header << "\tvoid consume();\n";
+    parser_header << "\tvoid eat(TokenType expected_type);\n";
+    parser_header << "\tvoid match_terminal(std::string expected);\n";
+
+    for (auto &rule : rules) {
+        parser_header << "\tvoid " << rule.first << "();\n";
+    }
+
+    parser_header << "public:\n";
+    parser_header << "\tToken current_token;\n";
+    parser_header << "\tParser(Lexer given_lexer);";
+    parser_header << "void parse();";
+    parser_header << "};\n";
+    parser_header << "#endif // !PARSER_H_";
+}
+
 Interpreter::Interpreter(std::unique_ptr<Syntax> node): root(std::move(node)) {
     file.open("test.cpp");
+    parser_header.open("parser_header.h");
 
     if (!file.is_open()) {
-        std::cerr << "Error in creating file\n";
+        std::cerr << "Error in creating parser file\n";
+        abort();
+    } else if (!parser_header.is_open()) {
+        std::cerr << "Error in creating parser header file\n";
         abort();
     }
 };
@@ -74,8 +108,16 @@ void Interpreter::visit(Expr &node) {
                 file << "else if ";
             }
             
+<<<<<<< HEAD
             for (std::string terminal : terminals) {
                 if (terminal == terminals.front()) {
+=======
+            for (size_t i = 0; i < terminals.size(); i++) {
+                std::string terminal = terminals[i];
+                std::cout << terminal << ", "; 
+
+                if (i == 0) {
+>>>>>>> development
                     file << "(current_token.lexeme == \"" << terminal << "\"";
                 } else {
                     file << " || current_token.lexeme == \"" << terminal << "\"";
@@ -221,6 +263,7 @@ void Interpreter::interpret() {
     file << "}\n";
 
     create_rule_table();
+    generate_parser_header();
 
     root->accept(*this);
 
@@ -250,8 +293,10 @@ void TerminalFinder::visit(Expr &node) {
 }
 
 void TerminalFinder::visit(Sequence &node) {
-    can_append = true; 
-    node.terms[0]->accept(*this);
+    can_append = true;
+    if (!node.terms.empty()) {
+        node.terms[0]->accept(*this);
+    }
 }
 
 void TerminalFinder::visit(Terminal &node) {
@@ -290,7 +335,9 @@ void TerminalFinder::visit(Empty &node) {
 }
 
 std::vector<std::string> TerminalFinder::find_first_terminals() {
-    visit(root);
+    terminals.clear();
+    can_append = true;
+    root.accept(*this);
 
     return terminals;
 }

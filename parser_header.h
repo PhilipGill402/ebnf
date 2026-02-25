@@ -14,12 +14,11 @@ class Parser {
 	void consume();
 	void eat(TokenType expected_type);
 	void match_terminal(std::string expected);
-	void letter();
-	void number();
 	void stmt();
-	void digit();
-	void identifier();
 	void program();
+	void letter();
+	void digit();
+	void number();
 public:
 	Token current_token;
 	Parser(Lexer given_lexer);void parse();};

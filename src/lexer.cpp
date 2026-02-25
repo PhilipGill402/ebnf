@@ -18,6 +18,7 @@ inline std::string to_string(TokenType t) {
         case ASTERISK:    return "ASTERISK";
         case BAR:         return "BAR";
         case PLUS:        return "PLUS";
+        case HASHTAG:     return "HASHTAG";
         case ENDOFFILE:   return "ENDOFFILE";
         default:          return "TokenType(UNKNOWN)";
     }
@@ -209,6 +210,11 @@ Token Lexer::get_next_token() {
             return token;
         } else if (curr_char == '+') {
             Token token = { .type = TokenType::PLUS, .lexeme = "+" };
+            get_next_char();
+
+            return token;
+        } else if (curr_char == '#') {
+            Token token = { .type = TokenType::HASHTAG, .lexeme = "#" };
             get_next_char();
 
             return token;

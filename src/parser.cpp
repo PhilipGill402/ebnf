@@ -19,16 +19,30 @@ void Parser::eat(TokenType expected_type) {
 
 std::unique_ptr<Syntax> Parser::syntax() {
     TRACE();
+    std::vector<std::unique_ptr<Rule>> parser_rules;
+    std::vector<std::unique_ptr<Rule>> lexer_rules;
     
-    std::vector<std::unique_ptr<Rule>> rules;
+    while (current_token.type == TokenType::HASHTAG) {
+        eat(TokenType::HASHTAG);
+        std::string id = current_token.lexeme;
+        eat(TokenType::NONTERMINAL);
+        if (id == "lexer") {
+            lexer_rules.push_back(syntax_rule());
 
-    rules.push_back(syntax_rule());
+            while (current_token.type == TokenType::NONTERMINAL) {
+                parser_rules.push_back(syntax_rule());
+            }
 
-    while (current_token.type == TokenType::NONTERMINAL) {
-        rules.push_back(syntax_rule());
+        } else if (id == "parser") {
+            parser_rules.push_back(syntax_rule());
+
+            while (current_token.type == TokenType::NONTERMINAL) {
+                parser_rules.push_back(syntax_rule());
+            }
+        }
     }
 
-    return std::make_unique<Syntax>(std::move(rules));
+    return std::make_unique<Syntax>(std::move(parser_rules));
 }
 
 std::unique_ptr<Rule> Parser::syntax_rule() {

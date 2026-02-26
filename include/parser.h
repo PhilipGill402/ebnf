@@ -14,10 +14,10 @@
     #define TRACE() do {} while (0)
 #endif
 
-
 class Parser {
     Lexer lexer;
     std::vector<std::string> keywords;
+    std::vector<Symbol> symbols;
     std::vector<std::unique_ptr<Rule>> parser_rules;
     std::vector<std::unique_ptr<Rule>> lexer_rules;
     
@@ -27,6 +27,7 @@ class Parser {
     void parser_directive();
     void lexer_directive();
     std::string keyword();
+    Symbol symbol();
     std::unique_ptr<Rule> syntax_rule();
     std::unique_ptr<Expr> definitions_list();
     std::unique_ptr<Sequence> single_definition();

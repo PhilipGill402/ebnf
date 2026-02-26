@@ -26,6 +26,11 @@ struct Sequence;
 struct Term;
 struct Visitor;
 
+typedef struct {
+    std::string type;
+    std::string symbol;
+} Symbol;
+
 struct AST {
     NodeType type;
 
@@ -44,8 +49,9 @@ struct Syntax : AST {
     std::vector<std::unique_ptr<Rule>> parser_rules;
     std::vector<std::unique_ptr<Rule>> lexer_rules;
     std::vector<std::string> keywords;
+    std::vector<Symbol> symbols;
 
-    Syntax(std::vector<std::unique_ptr<Rule>> given_parser_rules, std::vector<std::unique_ptr<Rule>> given_lexer_rules, std::vector<std::string> given_keywords);
+    Syntax(std::vector<std::unique_ptr<Rule>> given_parser_rules, std::vector<std::unique_ptr<Rule>> given_lexer_rules, std::vector<std::string> given_keywords, std::vector<Symbol> given_symbols);
     void accept(Visitor &n) override;
 };
 

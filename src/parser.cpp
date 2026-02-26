@@ -24,7 +24,7 @@ std::unique_ptr<Syntax> Parser::syntax() {
         directive();         
     }
 
-    return std::make_unique<Syntax>(std::move(parser_rules), std::move(lexer_rules), keywords);
+    return std::make_unique<Syntax>(std::move(parser_rules), std::move(lexer_rules), keywords, symbols);
 }
 
 void Parser::directive() {
@@ -68,9 +68,14 @@ void Parser::lexer_directive() {
             eat(TokenType::HASHTAG); 
             if (current_token.lexeme == "parser") {
                 return;
+            } else if (current_token.lexeme == "keyword") {
+                keywords.push_back(keyword());
+            } else if (current_token.lexeme == "symbol") {
+                symbols.push_back(symbol());
+            } else {
+                std::cerr << "Unexpected keyword after '#', expected 'keyword', 'symbol', or 'parser' but received '" << current_token.lexeme << "'\n";
+                abort();
             }
-
-            keywords.push_back(keyword());
         } else {
             lexer_rules.push_back(syntax_rule());
         }
@@ -91,18 +96,22 @@ void Parser::parser_directive() {
 
 std::string Parser::keyword() {
     TRACE();
-    std::string keyword; 
 
-    if (current_token.lexeme == "keyword") { 
-        eat(TokenType::NONTERMINAL); 
-        keyword = current_token.lexeme;
-        eat(TokenType::NONTERMINAL);
-    } else {
-        std::cerr << "Unexpected keyword after '#', expected 'keyword' but received '" << current_token.lexeme << "'\n";
-        abort();
-    }
+    eat(TokenType::NONTERMINAL); 
+    std::string keyword = current_token.lexeme;
+    eat(TokenType::NONTERMINAL);
 
     return keyword;
+}
+
+Symbol Parser::symbol() {
+    eat(TokenType::NONTERMINAL);
+    std::string type = current_token.lexeme;
+    eat(TokenType::NONTERMINAL);
+    std::string symbol = current_token.lexeme;
+    current_token = lexer.get_next_token(); // dont want to eat because this could be any sort of symbol 
+
+    return (Symbol){ .type = type, .symbol = symbol };
 }
 
 std::unique_ptr<Rule> Parser::syntax_rule() {

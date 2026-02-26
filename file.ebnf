@@ -1,7 +1,8 @@
 #lexer
 #keyword print
 #keyword let
-
+#symbol SEMI ;
+#symbol ASSIGN =
 identifier = letter, { letter } ;
 
 number = digit, { digit } ;

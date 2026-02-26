@@ -29,7 +29,15 @@ std::string token_enum_for_terminal(const std::string& lex) {
     return "NOT FOUND"; 
 }
 
-void Interpreter::generate_parser_header() {
+Interpreter::Interpreter(std::unique_ptr<Syntax> node): root(std::move(node)) {};
+
+void Interpreter::interpret() {
+    ParserInterpreter parser_interpreter = ParserInterpreter(std::move(root));
+    
+    parser_interpreter.generate();
+}
+
+void ParserInterpreter::generate_parser_header() {
     parser_header << "#ifndef PARSER_H_\n";
     parser_header << "#define PARSER_H_\n";
     parser_header << "#include <string>\n";
@@ -59,7 +67,7 @@ void Interpreter::generate_parser_header() {
     parser_header << "#endif // !PARSER_H_";
 }
 
-Interpreter::Interpreter(std::unique_ptr<Syntax> node): root(std::move(node)) {
+ParserInterpreter::ParserInterpreter(std::unique_ptr<Syntax> node): root(std::move(node)) {
     file.open("test.cpp");
     parser_header.open("parser_header.h");
 
@@ -72,7 +80,7 @@ Interpreter::Interpreter(std::unique_ptr<Syntax> node): root(std::move(node)) {
     }
 };
 
-void Interpreter::visit(Syntax &node) {
+void ParserInterpreter::visit(Syntax &node) {
     VISIT_TRACE();
 
     for (auto &rule : node.parser_rules) {
@@ -81,7 +89,7 @@ void Interpreter::visit(Syntax &node) {
 
 }
 
-void Interpreter::visit(Rule &node) {
+void ParserInterpreter::visit(Rule &node) {
     VISIT_TRACE();
     
     file << "void " << node.name << "() {\n";
@@ -91,7 +99,7 @@ void Interpreter::visit(Rule &node) {
     file << "}\n";
 }
 
-void Interpreter::visit(Expr &node) {
+void ParserInterpreter::visit(Expr &node) {
     VISIT_TRACE();
     
     int count = 0;
@@ -131,7 +139,7 @@ void Interpreter::visit(Expr &node) {
     
 }
 
-void Interpreter::visit(Sequence &node) {
+void ParserInterpreter::visit(Sequence &node) {
     VISIT_TRACE();
 
     for (auto &term : node.terms) {
@@ -139,7 +147,7 @@ void Interpreter::visit(Sequence &node) {
     }
 }
 
-void Interpreter::visit(Terminal &node) {
+void ParserInterpreter::visit(Terminal &node) {
     VISIT_TRACE();
     std::string token_type = token_enum_for_terminal(node.lexeme);
     if (token_type == "NOT FOUND") {
@@ -149,13 +157,13 @@ void Interpreter::visit(Terminal &node) {
     }
 
 }
-void Interpreter::visit(Nonterminal &node) {
+void ParserInterpreter::visit(Nonterminal &node) {
     VISIT_TRACE();
 
     file << node.rule << "();\n";
 }
 
-void Interpreter::visit(Optional &node) {
+void ParserInterpreter::visit(Optional &node) {
     VISIT_TRACE();
     
     int count = 0;
@@ -185,7 +193,7 @@ void Interpreter::visit(Optional &node) {
     
 }
 
-void Interpreter::visit(Repeated &node) {
+void ParserInterpreter::visit(Repeated &node) {
     VISIT_TRACE();
     
     std::vector<std::string> all_terminals;
@@ -216,23 +224,23 @@ void Interpreter::visit(Repeated &node) {
     file << "}\n";
 }
 
-void Interpreter::visit(Grouped &node) {
+void ParserInterpreter::visit(Grouped &node) {
     VISIT_TRACE();
 
     node.expr->accept(*this);
 }
 
-void Interpreter::visit(Empty &node) {
+void ParserInterpreter::visit(Empty &node) {
     VISIT_TRACE();
 }
 
-void Interpreter::create_rule_table() {
+void ParserInterpreter::create_rule_table() {
     for (auto &rule : root->parser_rules) {
         rules[rule->name] = rule.get();
     }
 }
 
-void Interpreter::interpret() {
+void ParserInterpreter::generate() {
     //CONSUME
     file << "void consume() {\n";
     file << "\tcurrent_token = lexer.get_next_token();\n";

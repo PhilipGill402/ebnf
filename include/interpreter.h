@@ -16,7 +16,16 @@
     #define VISIT_TRACE() do {} while (0)
 #endif
 
-class Interpreter : Visitor {
+class Interpreter {
+    std::unique_ptr<Syntax> root;
+
+public:
+    Interpreter(std::unique_ptr<Syntax> node);
+
+    void interpret();
+};
+
+class ParserInterpreter : Visitor {
     std::unique_ptr<Syntax> root;
     std::unordered_map<std::string, Rule*> rules;
     std::ofstream file;
@@ -37,9 +46,9 @@ class Interpreter : Visitor {
     void generate_parser_header();
 
 public:
-    Interpreter(std::unique_ptr<Syntax> node);
+    ParserInterpreter(std::unique_ptr<Syntax> node);
 
-    void interpret();
+    void generate();
 };
 
 class TerminalFinder : Visitor {

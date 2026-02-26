@@ -1,4 +1,7 @@
 #lexer
+#keyword print
+#keyword let
+
 identifier = letter, { letter } ;
 
 number = digit, { digit } ;

@@ -18,7 +18,8 @@ std::string node_type_name(NodeType t) {
 }
 
 AST::AST(NodeType given_type): type(given_type) {};
-Syntax::Syntax(std::vector<std::unique_ptr<Rule>> given_rules): AST(NodeType::SYNTAX), rules(std::move(given_rules)) {};
+Syntax::Syntax(std::vector<std::unique_ptr<Rule>> given_parser_rules, std::vector<std::unique_ptr<Rule>> given_lexer_rules, std::vector<std::string> given_keywords): AST(NodeType::SYNTAX), parser_rules(std::move(given_parser_rules)), lexer_rules(std::move(given_lexer_rules)), keywords(given_keywords) {};
+
 void Syntax::accept(Visitor &v) {
     v.visit(*this);
 }

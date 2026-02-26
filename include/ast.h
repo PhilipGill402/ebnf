@@ -41,9 +41,11 @@ struct AST {
 };
 
 struct Syntax : AST {
-    std::vector<std::unique_ptr<Rule>> rules;
+    std::vector<std::unique_ptr<Rule>> parser_rules;
+    std::vector<std::unique_ptr<Rule>> lexer_rules;
+    std::vector<std::string> keywords;
 
-    Syntax(std::vector<std::unique_ptr<Rule>> given_rules);
+    Syntax(std::vector<std::unique_ptr<Rule>> given_parser_rules, std::vector<std::unique_ptr<Rule>> given_lexer_rules, std::vector<std::string> given_keywords);
     void accept(Visitor &n) override;
 };
 

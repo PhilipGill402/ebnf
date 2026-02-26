@@ -16,9 +16,6 @@ class Parser {
 	void match_terminal(std::string expected);
 	void stmt();
 	void program();
-	void letter();
-	void digit();
-	void number();
 public:
 	Token current_token;
 	Parser(Lexer given_lexer);void parse();};

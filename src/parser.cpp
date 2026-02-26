@@ -19,30 +19,90 @@ void Parser::eat(TokenType expected_type) {
 
 std::unique_ptr<Syntax> Parser::syntax() {
     TRACE();
-    std::vector<std::unique_ptr<Rule>> parser_rules;
-    std::vector<std::unique_ptr<Rule>> lexer_rules;
+    
+    while (current_token.type == TokenType::HASHTAG) {
+        directive();         
+    }
+
+    return std::make_unique<Syntax>(std::move(parser_rules), std::move(lexer_rules), keywords);
+}
+
+void Parser::directive() {
+    TRACE(); 
     
     while (current_token.type == TokenType::HASHTAG) {
         eat(TokenType::HASHTAG);
-        std::string id = current_token.lexeme;
-        eat(TokenType::NONTERMINAL);
-        if (id == "lexer") {
-            lexer_rules.push_back(syntax_rule());
 
-            while (current_token.type == TokenType::NONTERMINAL) {
-                parser_rules.push_back(syntax_rule());
-            }
-
-        } else if (id == "parser") {
-            parser_rules.push_back(syntax_rule());
-
-            while (current_token.type == TokenType::NONTERMINAL) {
-                parser_rules.push_back(syntax_rule());
-            }
+        if (current_token.lexeme == "lexer") {
+            lexer_directive();
+        } else if (current_token.lexeme == "parser") {
+            parser_directive();
+        } else {
+            std::cerr << "expected either 'lexer' or 'parser' after '#', instead received '" << current_token.lexeme << "'\n";
+            abort();
         }
     }
 
-    return std::make_unique<Syntax>(std::move(parser_rules));
+    if (current_token.lexeme == "parser") {
+        parser_directive();
+    }
+}
+
+void Parser::lexer_directive() {
+    TRACE();
+
+    eat(TokenType::NONTERMINAL);
+
+    if (current_token.type == TokenType::HASHTAG) {
+        eat(TokenType::HASHTAG);
+        keywords.push_back(keyword());
+    } else if (current_token.type == TokenType::NONTERMINAL){
+        lexer_rules.push_back(syntax_rule());
+    } else {
+        std::cout << "expected '#' or a nonterminal, instead received '" << current_token.lexeme << "'\n";
+        abort();
+    }
+
+    while (current_token.type == TokenType::HASHTAG || current_token.type == TokenType::NONTERMINAL) {
+        if (current_token.type == TokenType::HASHTAG) {
+            eat(TokenType::HASHTAG); 
+            if (current_token.lexeme == "parser") {
+                return;
+            }
+
+            keywords.push_back(keyword());
+        } else {
+            lexer_rules.push_back(syntax_rule());
+        }
+    }
+}
+
+void Parser::parser_directive() {
+    TRACE();
+
+    eat(TokenType::NONTERMINAL);
+
+    parser_rules.push_back(syntax_rule());
+
+    while (current_token.type == TokenType::NONTERMINAL) {
+        parser_rules.push_back(syntax_rule());
+    }
+}
+
+std::string Parser::keyword() {
+    TRACE();
+    std::string keyword; 
+
+    if (current_token.lexeme == "keyword") { 
+        eat(TokenType::NONTERMINAL); 
+        keyword = current_token.lexeme;
+        eat(TokenType::NONTERMINAL);
+    } else {
+        std::cerr << "Unexpected keyword after '#', expected 'keyword' but received '" << current_token.lexeme << "'\n";
+        abort();
+    }
+
+    return keyword;
 }
 
 std::unique_ptr<Rule> Parser::syntax_rule() {

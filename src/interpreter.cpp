@@ -75,7 +75,7 @@ Interpreter::Interpreter(std::unique_ptr<Syntax> node): root(std::move(node)) {
 void Interpreter::visit(Syntax &node) {
     VISIT_TRACE();
 
-    for (auto &rule : node.rules) {
+    for (auto &rule : node.parser_rules) {
         rule->accept(*this);
     }
 
@@ -227,7 +227,7 @@ void Interpreter::visit(Empty &node) {
 }
 
 void Interpreter::create_rule_table() {
-    for (auto &rule : root->rules) {
+    for (auto &rule : root->parser_rules) {
         rules[rule->name] = rule.get();
     }
 }

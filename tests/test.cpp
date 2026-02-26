@@ -25,10 +25,9 @@ int main() {
     file.close();
 
     Parser parser = Parser(lexer);
-    std::cout << parser.current_token << "\n";
 
     std::unique_ptr<Syntax> root = parser.parse();
-
+    
     Interpreter interpreter = Interpreter(std::move(root));
     interpreter.interpret();
     

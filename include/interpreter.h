@@ -51,35 +51,6 @@ public:
     void generate();
 };
 
-class LexerInterpreter : Visitor {
-    Syntax &root;
-    std::unordered_map<std::string, Rule*> rules;
-    std::ofstream file;
-    std::ofstream header;
-
-    std::vector<std::string> keywords;
-    std::vector<Symbol> symbols;
-    
-    void visit(Syntax &node);
-    void visit(Rule &node);
-    void visit(Expr &node);
-    void visit(Sequence &node);
-    void visit(Terminal &node);
-    void visit(Nonterminal &node);
-    void visit(Optional &node);
-    void visit(Repeated &node);
-    void visit(Grouped &node);
-    void visit(Empty &node);
-
-    void create_rule_table();
-    void generate_header();
-
-public:
-    LexerInterpreter(Syntax &node);
-
-    void generate();
-};
-
 class TerminalFinder : Visitor {
     Sequence &root;
     std::unordered_map<std::string, Rule*> rules;

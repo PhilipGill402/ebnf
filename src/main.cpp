@@ -1,4 +1,8 @@
-#include "main.h"
+#include <iostream>
+#include <fstream>
+#include "lexer.h"
+#include "parser.h"
+#include "interpreter.h"
 
 int main(int argc, char** argv) {
     if (argc != 2) {
@@ -19,10 +23,15 @@ int main(int argc, char** argv) {
         contents += line;
         contents += "\n";
     }
-
-    Lexer lexer = Lexer(contents);
     
     file.close();
+
+    Lexer lexer = Lexer(contents);
+    Parser parser = Parser(lexer);
+    std::unique_ptr<Syntax> root = parser.parse();
+    Interpreter interpreter = Interpreter(std::move(root));
+    interpreter.interpret();
+    
 
     return 0;
 }

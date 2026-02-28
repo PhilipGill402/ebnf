@@ -1,8 +1,7 @@
-#lexer
-#keyword print
-#keyword let
-#symbol SEMI ;
-#symbol ASSIGN =
+program = { stmt, ";" } ;
+
+stmt = "let", identifier, "=", number | "print", identifier ;
+
 identifier = letter, { letter } ;
 
 number = digit, { digit } ;
@@ -10,8 +9,3 @@ number = digit, { digit } ;
 letter = "a" | "b" | "c" | "d" | "e" ;
 
 digit = "0" | "1" | "2" | "3" | "4" ;
-
-#parser
-program = { stmt, ";" } ;
-
-stmt = "let", identifier, "=", number | "print", identifier ;

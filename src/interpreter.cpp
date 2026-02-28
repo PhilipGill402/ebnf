@@ -2,14 +2,6 @@
 #include "visitor.h"
 
 std::string token_enum_for_terminal(const std::string& lex) {
-    // keywords
-    if (lex == "if")    return "IFOP";
-    if (lex == "then")  return "THENOP";
-    if (lex == "end")   return "ENDOP";
-    if (lex == "while") return "WHILEOP";
-    if (lex == "print") return "PRINT";
-    if (lex == "let")   return "LET";
-
     // punctuation / operators
     if (lex == "=") return "ASSGN";
     if (lex == "+") return "ADDOP";
@@ -22,10 +14,6 @@ std::string token_enum_for_terminal(const std::string& lex) {
     if (lex == "(") return "LPAREN";
     if (lex == ")") return "RPAREN";
 
-    // token categories written as grammar terminals
-    if (lex == "id")  return "ID";
-    if (lex == "int") return "INT";
-
     return "NOT FOUND"; 
 }
 
@@ -33,10 +21,8 @@ Interpreter::Interpreter(std::unique_ptr<Syntax> node): root(std::move(node)) {}
 
 void Interpreter::interpret() {
     ParserInterpreter parser_interpreter = ParserInterpreter(*root);
-    LexerInterpreter lexer_interpreter = LexerInterpreter(*root);
     
     parser_interpreter.generate();
-    lexer_interpreter.generate();
 }
 
 void ParserInterpreter::generate_header() {
@@ -63,15 +49,15 @@ void ParserInterpreter::generate_header() {
 
     header << "public:\n";
     header << "\tToken current_token;\n";
-    header << "\tParser(Lexer given_lexer);";
-    header << "void parse();";
+    header << "\tParser(Lexer given_lexer);\n";
+    header << "void parse();\n";
     header << "};\n";
     header << "#endif // !PARSER_H_";
 }
 
 ParserInterpreter::ParserInterpreter(Syntax &node): root(node) {
-    file.open("test.cpp");
-    header.open("parser_header.h");
+    file.open("parser.cpp");
+    header.open("parser.h");
 
     if (!file.is_open()) {
         std::cerr << "Error in creating parser file\n";
@@ -84,8 +70,8 @@ ParserInterpreter::ParserInterpreter(Syntax &node): root(node) {
 
 void ParserInterpreter::visit(Syntax &node) {
     VISIT_TRACE();
-
-    for (auto &rule : node.parser_rules) {
+    
+    for (auto &rule : node.rules) {
         rule->accept(*this);
     }
 
@@ -94,7 +80,8 @@ void ParserInterpreter::visit(Syntax &node) {
 void ParserInterpreter::visit(Rule &node) {
     VISIT_TRACE();
     
-    file << "void " << node.name << "() {\n";
+    file << "void Parser::" << node.name << "() {\n";
+    file << "TRACE()\n";
     
     node.expr->accept(*this);
 
@@ -120,7 +107,6 @@ void ParserInterpreter::visit(Expr &node) {
             
             for (size_t i = 0; i < terminals.size(); i++) {
                 std::string terminal = terminals[i];
-                std::cout << terminal << ", "; 
 
                 if (i == 0) {
                     file << "(current_token.lexeme == \"" << terminal << "\"";
@@ -134,7 +120,6 @@ void ParserInterpreter::visit(Expr &node) {
             sequence->accept(*this);
 
             file << "}\n";
-            std::cout << "\n";
             count++;
         }
     }
@@ -237,19 +222,19 @@ void ParserInterpreter::visit(Empty &node) {
 }
 
 void ParserInterpreter::create_rule_table() {
-    for (auto &rule : root.parser_rules) {
+    for (auto &rule : root.rules) {
         rules[rule->name] = rule.get();
     }
 }
 
 void ParserInterpreter::generate() {
     //CONSUME
-    file << "void consume() {\n";
+    file << "void Parser::consume() {\n";
     file << "\tcurrent_token = lexer.get_next_token();\n";
     file << "}\n";
 
     // EAT
-    file << "void eat(TokenType expected_type) {\n";
+    file << "void Parser::eat(TokenType expected_type) {\n";
     file << "\t#ifdef DEBUG\n";
     file << "\t\tstd::cout << \"Token: \" << current_token << \"\\n\";\n";
     file << "\t#endif // DEBUG\n";
@@ -261,8 +246,8 @@ void ParserInterpreter::generate() {
     file << "}\n";
 
     //MATCH TERMINAL
-    file << "void match_terminal(std::string expected) {\n";
-    file << "\tif (current_token.type != Token::TERMINAL || current_token.lexeme != expected) {\n";
+    file << "void Parser::match_terminal(std::string expected) {\n";
+    file << "\tif (current_token.lexeme != expected) {\n";
     file << "\t\tstd::cerr << \"Expected: \" << expected << \", Received \" << current_token.lexeme << \"\\n\";\n";
     file << "\t\tabort();\n";
     file << "\t}\n";
@@ -273,213 +258,6 @@ void ParserInterpreter::generate() {
     generate_header();
 
     root.accept(*this);
-}
-
-LexerInterpreter::LexerInterpreter(Syntax &node): root(node) {
-    keywords = root.keywords;
-    symbols = root.symbols;
-    
-    file.open("test_lexer.cpp");
-    header.open("lexer_header.h");
-
-    if (!file.is_open()) {
-        std::cerr << "Error in creating lexer file\n";
-        abort();
-    } else if (!header.is_open()) {
-        std::cerr << "Error in creating lexer header file\n";
-        abort();
-    }
-};
-
-void LexerInterpreter::visit(Syntax &node) {
-    VISIT_TRACE();
-
-    for (auto &rule : node.lexer_rules) {
-        rule->accept(*this);
-    }   
-}
-
-void LexerInterpreter::visit(Rule &node) {
-    VISIT_TRACE();
-    
-    file << "void " << node.name << "() {\n";
-    
-    node.expr->accept(*this);
-
-    file << "}\n";
-}
-
-void LexerInterpreter::visit(Expr &node) {
-    VISIT_TRACE();
-    
-    int count = 0;
-    if (node.alternatives.size() == 1) {
-        node.alternatives[0]->accept(*this); 
-    } else {
-        for (auto &sequence : node.alternatives) {
-            TerminalFinder finder = TerminalFinder(*sequence, rules);
-            std::vector<std::string> terminals = finder.find_first_terminals();
-            
-            if (count == 0) {
-                file << "if ";
-            } else {
-                file << "else if ";
-            }
-            
-            for (size_t i = 0; i < terminals.size(); i++) {
-                std::string terminal = terminals[i];
-                std::cout << terminal << ", "; 
-
-                if (i == 0) {
-                    file << "(current_token.lexeme == \"" << terminal << "\"";
-                } else {
-                    file << " || current_token.lexeme == \"" << terminal << "\"";
-                }
-            }
-
-            file << ") {\n";
-
-            sequence->accept(*this);
-
-            file << "}\n";
-            std::cout << "\n";
-            count++;
-        }
-    }
-}
-
-void LexerInterpreter::visit(Sequence &node) {
-    VISIT_TRACE();
-
-    for (auto &term : node.terms) {
-        term->accept(*this); 
-    }
-}
-
-void LexerInterpreter::visit(Terminal &node) {
-    VISIT_TRACE();
-    std::string token_type = token_enum_for_terminal(node.lexeme);
-    if (token_type == "NOT FOUND") {
-        file << "match_terminal(\"" << node.lexeme << "\");\n";
-    } else {
-        file << "eat(" << token_enum_for_terminal(node.lexeme) << ");\n";
-    }
-}
-
-void LexerInterpreter::visit(Nonterminal &node) {
-    VISIT_TRACE();
-
-    file << node.rule << "();\n";
-}
-
-void LexerInterpreter::visit(Optional &node) {
-    VISIT_TRACE();
-    
-    int count = 0;
-    for (auto &sequence : node.expr->alternatives) {
-        TerminalFinder finder = TerminalFinder(*sequence, rules);
-        std::vector<std::string> terminals = finder.find_first_terminals();
-
-        if (count == 0) {
-            file << "if (";
-        } else {
-            file << "else if (";
-        }
-
-        for (size_t i = 0; i < terminals.size(); i++) {
-            if (i > 0) {
-                file << " || ";
-            } 
-               
-            file << "current_token.lexeme == \"" << terminals[i] << "\"";
-        }
-
-        file << ") {\n";
-        sequence->accept(*this);
-        file << "}\n";
-        count++;
-    }
-}
-
-void LexerInterpreter::visit(Repeated &node) {
-    VISIT_TRACE();
-    
-    std::vector<std::string> all_terminals;
-
-    for (auto &sequence : node.expr->alternatives) {
-        TerminalFinder finder = TerminalFinder(*sequence, rules);
-        std::vector<std::string> terminals = finder.find_first_terminals();
-        
-        for (std::string terminal : terminals) {
-            if (std::find(all_terminals.begin(), all_terminals.end(), terminal) == all_terminals.end()) {
-                all_terminals.push_back(terminal);
-            }
-        } 
-    }
-    
-    file << "while (";
-    for (size_t i = 0; i < all_terminals.size(); i++) {
-        if (i > 0) {
-            file << " || ";
-        }
-        file << "current_token.lexeme == \"" << all_terminals[i] << "\"";
-    } 
-
-    file << ") {\n";
-    
-    node.expr->accept(*this);
-
-    file << "}\n";
-}
-
-void LexerInterpreter::visit(Grouped &node) {
-    VISIT_TRACE();
-
-    node.expr->accept(*this);
-}
-
-void LexerInterpreter::visit(Empty &node) {
-    VISIT_TRACE();
-}
-
-void LexerInterpreter::create_rule_table() {
-    for (auto &rule : root.lexer_rules) {
-        rules[rule->name] = rule.get();
-    }
-}
-
-void LexerInterpreter::generate_header() {
-    header << "#ifndef LEXER_H_\n";
-    header << "#define LEXER_H_\n";
-    header << "#include <string>\n";
-
-    header << "typedef enum {\n";
-    
-    for (Symbol symbol : symbols) {
-        header << "\t" << symbol.type << ",\n";
-    }
-
-    header << "} TokenType;\n";
-    
-    header << "typedef struct {\n";
-    header << "\tTokenType type;\n";
-    header << "\tstd::string lexeme;\n";
-    header << "} Token;\n";
-
-    header << "class Lexer {\n";
-    header << "\tstd::string source;\n";
-    header << "\tchar curr_char\n";
-    header << "\tint pos;\n";
-
-    header << "public:\n";
-    header << "\tLexer(std::string file);\n";
-    header << "\tToken get_next_token();\n";
-    
-    header << "#endif // !LEXER_H_";
-}
-
-void LexerInterpreter::generate() {
-    generate_header(); 
 }
 
 TerminalFinder::TerminalFinder(Sequence &node, std::unordered_map<std::string, Rule*> &given_rules): root(node), rules(given_rules) {};

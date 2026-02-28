@@ -105,15 +105,10 @@ void ParserInterpreter::visit(Expr &node) {
                 file << "else if ";
             }
             
-<<<<<<< HEAD
-            for (std::string terminal : terminals) {
-                if (terminal == terminals.front()) {
-=======
             for (size_t i = 0; i < terminals.size(); i++) {
                 std::string terminal = terminals[i];
 
                 if (i == 0) {
->>>>>>> development
                     file << "(current_token.lexeme == \"" << terminal << "\"";
                 } else {
                     file << " || current_token.lexeme == \"" << terminal << "\"";
@@ -250,17 +245,10 @@ void ParserInterpreter::generate() {
     file << "}\n";
 
     //MATCH TERMINAL
-<<<<<<< HEAD
-    file << "void match_terminal(std::string expected) {\n";
-    file << "\tif (current_token.type != Token::TERMINAL || current_token.lexeme != expected) {\n";
-    file << "\t\tstd::cout << \"Expected: \" << expected << \", Received \" << current_token.lexeme << \"\\n\";\n";
-    file << "\t\tparse_errors++;\n";
-=======
     file << "void Parser::match_terminal(std::string expected) {\n";
     file << "\tif (current_token.lexeme != expected) {\n";
     file << "\t\tstd::cerr << \"Expected: \" << expected << \", Received \" << current_token.lexeme << \"\\n\";\n";
     file << "\t\tabort();\n";
->>>>>>> development
     file << "\t}\n";
     file << "\tconsume();\n";
     file << "}\n";
@@ -268,16 +256,11 @@ void ParserInterpreter::generate() {
     create_rule_table();
     generate_header();
 
-<<<<<<< HEAD
-    root->accept(*this);
+    root.accept(*this);
 
     file << "void parse() {\n";
-    file << "\t" << root->rules[0]->name << "();\n";
-    file << "\tstd::cout << \"There were \" << parse_errors << \" parse errors\\n\"\n";
+    file << "\t" << root.rules[0]->name << "();\n";
     file << "}";
-=======
-    root.accept(*this);
->>>>>>> development
 }
 
 TerminalFinder::TerminalFinder(Sequence &node, std::unordered_map<std::string, Rule*> &given_rules): root(node), rules(given_rules) {};

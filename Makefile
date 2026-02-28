@@ -45,7 +45,7 @@ build:
 
 # Clean build artifacts
 clean:
-	rm -rf build $(TARGET) $(TEST_TARGET) test.cpp parser_header.cpp
+	rm -rf build $(TARGET) $(TEST_TARGET) parser.cpp parser.h
 
 .PHONY: all test clean
 

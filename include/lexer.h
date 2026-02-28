@@ -22,6 +22,7 @@ typedef enum {
     ASTERISK,
     BAR,
     PLUS,
+    HASHTAG,
     ENDOFFILE
 } TokenType;
 

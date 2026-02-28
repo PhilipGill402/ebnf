@@ -21,7 +21,6 @@ std::unique_ptr<Syntax> Parser::syntax() {
     TRACE();
     
     std::vector<std::unique_ptr<Rule>> rules;
-
     rules.push_back(syntax_rule());
 
     while (current_token.type == TokenType::NONTERMINAL) {

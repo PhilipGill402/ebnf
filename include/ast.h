@@ -26,6 +26,11 @@ struct Sequence;
 struct Term;
 struct Visitor;
 
+typedef struct {
+    std::string type;
+    std::string symbol;
+} Symbol;
+
 struct AST {
     NodeType type;
 

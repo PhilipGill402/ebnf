@@ -19,6 +19,7 @@ std::string node_type_name(NodeType t) {
 
 AST::AST(NodeType given_type): type(given_type) {};
 Syntax::Syntax(std::vector<std::unique_ptr<Rule>> given_rules): AST(NodeType::SYNTAX), rules(std::move(given_rules)) {};
+
 void Syntax::accept(Visitor &v) {
     v.visit(*this);
 }

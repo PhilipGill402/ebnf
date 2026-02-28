@@ -5,6 +5,8 @@
 #include "ast.h"
 #include <iostream>
 #include <memory>
+#include <vector>
+#include <string>
 
 #ifdef DEBUG
     #define TRACE() do { std::cout << "ENTERING: " << __func__ << "\n"; } while(0)
@@ -12,13 +14,12 @@
     #define TRACE() do {} while (0)
 #endif
 
-
 class Parser {
     Lexer lexer;
-    
+   
     void eat(TokenType expected_type);
     std::unique_ptr<Syntax> syntax();
-    std::unique_ptr<Rule> syntax_rule();
+   std::unique_ptr<Rule> syntax_rule();
     std::unique_ptr<Expr> definitions_list();
     std::unique_ptr<Sequence> single_definition();
     std::unique_ptr<Term> syntactic_term();
